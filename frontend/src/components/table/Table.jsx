@@ -1,57 +1,111 @@
-import {useState} from "react";
-import {fetchInfo} from "../api/Api";
+import { useState } from "react";
+import { fetchInfo } from "../api/Api";
 
 const Table = () => {
     const [link, setLink] = useState("");
-    const [tableHeadInfo, setTableHeadInfo] = useState(["userID","Text"]);
-    const [tableBodyInfo, setTableBodyInfo] = useState();
+    const [rows, setRows] = useState([]);
+    const [columns, setColumns] = useState(["نوع", "کاربر", "متن/لینک"]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
-    const pageInfo= () => {
-        setTableHeadInfo(["userID","RealName"])
-        setTableBodyInfo(fetchInfo({type:"page", link: link}));
-    }
-    const postInfo = () => {
-        setTableHeadInfo(["userID","Text"])
-        setTableBodyInfo(fetchInfo({type:"post", link: link}));
-    }
+    const handleRequest = async (type) => {
+        setError("");
+        setRows([]);
+        setLoading(true);
+        try {
+            const result = await fetchInfo({ type, link });
+            if (result.kind === 'post') {
+                setColumns(["#", "کاربر", "متن"]);
+                const comments = result.data.comments || [];
+                setRows(comments.map((item, idx) => ({
+                    index: idx + 1,
+                    user: item.username || "-",
+                    value: item.text || "",
+                })));
+            } else if (result.kind === 'profile') {
+                setColumns(["نوع", "کاربر", "لینک"]);
+                const followers = (result.data.followers || []).map((item) => ({
+                    type: "Follower",
+                    user: item.username,
+                    value: item.url,
+                }));
+                const following = (result.data.following || []).map((item) => ({
+                    type: "Following",
+                    user: item.username,
+                    value: item.url,
+                }));
+                setRows([...followers, ...following]);
+            }
+        } catch (err) {
+            const msg = err.response?.data?.error || err.message || "خطای ناشناخته";
+            setError(msg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <>
             <div className="input-group mb-3 mt-3 p-3 w-75 container">
                 <div className="input-group-prepend">
-                    <button onClick={pageInfo} className="btn btn-outline-primary" type="button">Page</button>
-                    <button onClick={postInfo} className="btn btn-outline-secondary" type="button">Post</button>
+                    <button onClick={() => handleRequest('profile')} className="btn btn-outline-primary" type="button">Page</button>
+                    <button onClick={() => handleRequest('post')} className="btn btn-outline-secondary ms-2" type="button">Post</button>
                 </div>
-                <input type="text" className="form-control" placeholder="enter your link here" onChange={(e) => {setLink(e.target.value)}} value={link}
-                       aria-describedby="basic-addon1"/>
+                <input
+                    type="text"
+                    className="form-control ms-2"
+                    placeholder="لینک اینستاگرام را وارد کنید"
+                    onChange={(e) => setLink(e.target.value)}
+                    value={link}
+                    aria-describedby="basic-addon1"
+                />
             </div>
-            <hr/>
-            <div className="mb-3 mt-3 p-3 w-75 container">
-                <table className="table table-striped">
-                    <thead>
-                    <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">{tableHeadInfo[0]}</th>
-                        <th scope="col">{tableHeadInfo[1]}</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {
-                        [tableBodyInfo].keys().map((item, index) => (
-                            <tr>
-                                <th scope="row">{index + 1}</th>
-                                <td>{item[tableHeadInfo[0]]}</td>
-                                <td>{item[tableHeadInfo[1]]}</td>
+
+            {error && (
+                <div className="alert alert-danger w-75 container" role="alert">
+                    {error}
+                </div>
+            )}
+
+            {loading && (
+                <div className="w-75 container">در حال دریافت...</div>
+            )}
+
+            {!loading && rows.length > 0 && (
+                <div className="mb-3 mt-3 p-3 w-75 container">
+                    <table className="table table-striped">
+                        <thead>
+                        <tr>
+                            {columns.map((col) => (
+                                <th scope="col" key={col}>{col}</th>
+                            ))}
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {rows.map((row, index) => (
+                            <tr key={`${row.user}-${index}`}>
+                                {columns[0] === "#" ? (
+                                    <>
+                                        <th scope="row">{row.index}</th>
+                                        <td>{row.user}</td>
+                                        <td>{row.value}</td>
+                                    </>
+                                ) : (
+                                    <>
+                                        <th scope="row">{row.type}</th>
+                                        <td>{row.user}</td>
+                                        <td><a href={row.value} target="_blank" rel="noreferrer">{row.value}</a></td>
+                                    </>
+                                )}
                             </tr>
-                        ))
-                    }
+                        ))}
+                        </tbody>
+                    </table>
 
-                    </tbody>
-                </table>
-
-            </div>
-
-
+                </div>
+            )}
         </>
-    )
-}
+    );
+};
+
 export default Table;

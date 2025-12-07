@@ -1,15 +1,14 @@
 {
-  "name": "backend",
+  "name": "instagram-backend",
   "version": "1.0.0",
+  "description": "Simple Express backend that uses Playwright to fetch Instagram data via saved sessions.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "login": "node login.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^4.19.2",
+    "playwright": "^1.45.0"
   }
 }

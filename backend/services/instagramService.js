@@ -29,7 +29,7 @@ function resolveSessionPath(customSessionPath) {
         .map((file) => path.join(sessionsDir, file));
 
     if (!files.length) {
-        throw new HttpError(401, 'No saved sessions found. Please run `npm run login` first.');
+        throw new HttpError(401, 'no saved sessions found. Please run `npm run login` first.');
     }
 
     files.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
@@ -86,7 +86,6 @@ async function checkPrivatePage(page) {
     }
 }
 
-// مهم: طبق درخواست تو، فقط headless: false
 async function withBrowser(sessionPath, handler) {
     const browser = await chromium.launch({
         headless: false,
@@ -210,10 +209,6 @@ async function fetchPostComments(postUrl, customSessionPath) {
 }
 
 
-/**
- * اسکرول فالوئر / فالوینگ با اسکرول واقعی روی دیالوگ
- * (این قسمت مثل قبل مونده)
- */
 async function collectConnections(page, listType) {
     const selector = listType === 'followers'
         ? 'a[href$="/followers/"]'

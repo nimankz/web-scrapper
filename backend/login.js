@@ -14,6 +14,7 @@ const rl = readline.createInterface({
 });
 
 (async () => {
+    
     const browser = await chromium.launch({
         headless: false
     });
@@ -25,19 +26,13 @@ const rl = readline.createInterface({
     const page = await context.newPage();
 
     console.log("Opening Instagram...");
-    await page.goto('https://www.instagram.com', {
-        waitUntil: 'domcontentloaded', // ✅ دیگه networkidle نیست
-        timeout: 0                      // ✅ یعنی بدون محدودیت زمانی
-    });
-
-    console.log("✅ وارد اکانت شو.");
-    console.log("⏳ وقتی لاگین کردی، برگرد ترمینال و Enter بزن.");
+    await page.goto('https://www.instagram.com', {waitUntil: 'domcontentloaded', timeout: 0 });
 
     rl.question("", async () => {
         const sessionPath = path.join(sessionsDir, `session-${Date.now()}.json`);
         await context.storageState({ path: sessionPath });
 
-        console.log(`✅ سشن ذخیره شد: ${sessionPath}`);
+        console.log(`✅ session is saved ! ${sessionPath}`);
 
         await browser.close();
         rl.close();

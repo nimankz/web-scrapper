@@ -17,11 +17,15 @@ const Table = () => {
             if (result.kind === 'post') {
                 setColumns(["#", "کاربر", "متن"]);
                 const comments = result.data.comments || [];
-                setRows(comments.map((item, idx) => ({
-                    index: idx + 1,
-                    user: item.username || "-",
-                    value: item.text || "",
-                })));
+                setRows(comments.map((item, idx) => {
+                    const commentText = item.text ?? item.comment ?? "";
+
+                    return {
+                        index: idx + 1,
+                        user: item.username || "-",
+                        value: commentText,
+                    };
+                }));
             } else if (result.kind === 'profile') {
                 setColumns(["نوع", "کاربر", "لینک"]);
                 const followers = (result.data.followers || []).map((item) => ({

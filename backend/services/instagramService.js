@@ -29,7 +29,7 @@ function resolveSessionPath(customSessionPath) {
         .map((file) => path.join(sessionsDir, file));
 
     if (!files.length) {
-        throw new HttpError(401, 'No saved sessions found. Please run `npm run login` first.');
+        throw new HttpError(401, 'no saved sessions found. Please run `npm run login` first.');
     }
 
     files.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
@@ -86,7 +86,6 @@ async function checkPrivatePage(page) {
     }
 }
 
-// مهم: طبق درخواست تو، فقط headless: false
 async function withBrowser(sessionPath, handler) {
     const browser = await chromium.launch({
         headless: false,
@@ -122,25 +121,22 @@ async function fetchPostComments(postUrl, customSessionPath) {
     const sessionPath = resolveSessionPath(customSessionPath);
 
     return withBrowser(sessionPath, async (page) => {
+
         await page.goto(normalizedUrl, { waitUntil: 'domcontentloaded', timeout: 0 });
         await ensureLoggedIn(page);
         await checkPrivatePage(page);
 
-        // صبر کنیم صفحه کامل لود بشه
         await page.waitForTimeout(3000);
 
-        // صبر 6 ثانیه برای لود کامنت‌ها
         console.log('Waiting 6 seconds for comments to load...');
         await page.waitForTimeout(6000);
 
-        // حالا همه کامنت‌ها رو جمع کن
         const comments = await page.evaluate(() => {
             const results = [];
             
-            // تعداد کامنت‌ها رو نمیدونیم، پس از 1 تا 100 امتحان میکنیم
             for (let i = 1; i <= 100; i++) {
                 try {
-                    // یوزرنیم - فقط عدد i عوض میشه
+
                     const usernameXpath = `/html/body/div[1]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/section/main/div/div[1]/div/div[2]/div/div[2]/div/div[2]/div[${i}]/div/div/div[2]/div[1]/div[1]/div/div[1]/span[1]/span/span/div/a/div/div/span`;
                     
                     const usernameEl = document.evaluate(
@@ -151,7 +147,6 @@ async function fetchPostComments(postUrl, customSessionPath) {
                         null
                     ).singleNodeValue;
                     
-                    // کامنت - فقط عدد i عوض میشه
                     const commentXpath = `/html/body/div[1]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/section/main/div/div[1]/div/div[2]/div/div[2]/div/div[2]/div[${i}]/div/div/div[2]/div[1]/div[1]/div/div[2]/span`;
                     
                     const commentEl = document.evaluate(
@@ -162,12 +157,10 @@ async function fetchPostComments(postUrl, customSessionPath) {
                         null
                     ).singleNodeValue;
                     
-                    // اگه هیچ کدوم پیدا نشد، یعنی کامنت‌ها تموم شدن
                     if (!usernameEl && !commentEl) {
                         break;
                     }
                     
-                    // اگه پیدا شدن، اضافه کن
                     if (usernameEl && commentEl) {
                         const username = usernameEl.textContent?.trim();
                         const comment = commentEl.textContent?.trim();
@@ -181,7 +174,6 @@ async function fetchPostComments(postUrl, customSessionPath) {
                     }
                     
                 } catch (error) {
-                    // اگه خطا داد، احتمالاً به انتهای کامنت‌ها رسیدیم
                     console.warn(`Stopped at index ${i}`);
                     break;
                 }
@@ -191,7 +183,6 @@ async function fetchPostComments(postUrl, customSessionPath) {
             return results;
         });
 
-        // حذف تکراری‌ها
         const uniqueComments = [];
         const seen = new Set();
 
@@ -209,12 +200,8 @@ async function fetchPostComments(postUrl, customSessionPath) {
     });
 }
 
-
-/**
- * اسکرول فالوئر / فالوینگ با اسکرول واقعی روی دیالوگ
- * (این قسمت مثل قبل مونده)
- */
 async function collectConnections(page, listType) {
+
     const selector = listType === 'followers'
         ? 'a[href$="/followers/"]'
         : 'a[href$="/following/"]';
@@ -225,13 +212,11 @@ async function collectConnections(page, listType) {
     await page.waitForSelector('div[role="dialog"]', { timeout: 10000 });
     await page.waitForTimeout(1000);
 
-    // موس رو ببریم وسط که اسکرول روی دیالوگ اعمال بشه
     await page.mouse.move(400, 300);
 
     let lastCount = 0;
     let stableRounds = 0;
 
-    // اسکرول و لود
     for (let i = 0; i < 220; i++) {
         await page.mouse.wheel(0, 1400);
         await page.waitForTimeout(450);
@@ -243,7 +228,7 @@ async function collectConnections(page, listType) {
                     const username = a.textContent?.trim();
                     const href = a.getAttribute('href') || '';
                     if (!username || !href) return false;
-                    if (href === '/' || href.startsWith('/p/')) return false; // پست یا هوم نباشه
+                    if (href === '/' || href.startsWith('/p/')) return false; 
                     return true;
                 }).length
         );
@@ -256,11 +241,9 @@ async function collectConnections(page, listType) {
         }
 
         if (stableRounds >= 25) {
-            break; // چندبار پشت سر هم تعداد ثابت موند → ته لیست
+            break; 
         }
     }
-
-    // حالا لیست کامل رو از داخل دیالوگ بخون
     const entries = await page.evaluate(() => {
         const dialog = document.querySelector('div[role="dialog"]');
         if (!dialog) return [];
@@ -294,10 +277,12 @@ async function collectConnections(page, listType) {
 }
 
 async function fetchProfileConnections(profileUrl, customSessionPath) {
+    
     const normalizedUrl = validateInstagramUrl(profileUrl, 'profile');
     const sessionPath = resolveSessionPath(customSessionPath);
 
     return withBrowser(sessionPath, async (page) => {
+
         await page.goto(normalizedUrl, { waitUntil: 'domcontentloaded', timeout: 0 });
         await ensureLoggedIn(page);
         await checkPrivatePage(page);
@@ -306,6 +291,7 @@ async function fetchProfileConnections(profileUrl, customSessionPath) {
         await page.waitForTimeout(1000);
 
         const followers = await collectConnections(page, 'followers');
+
         const following = await collectConnections(page, 'following');
 
         return { followers, following };

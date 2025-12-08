@@ -4,24 +4,15 @@ const readline = require('readline');
 const { chromium } = require('playwright');
 
 const sessionsDir = path.join(__dirname, 'sessions');
-if (!fs.existsSync(sessionsDir)) {
-    fs.mkdirSync(sessionsDir);
-}
+if (!fs.existsSync(sessionsDir)) {fs.mkdirSync(sessionsDir);}
 
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
+const rl = readline.createInterface({input: process.stdin,output: process.stdout});
 
 (async () => {
-    
-    const browser = await chromium.launch({
-        headless: false
-    });
 
-    const context = await browser.newContext({
-        viewport: { width: 1280, height: 800 }
-    });
+    const browser = await chromium.launch({headless: false});
+
+    const context = await browser.newContext({viewport: { width: 1280, height: 800 }});
 
     const page = await context.newPage();
 
